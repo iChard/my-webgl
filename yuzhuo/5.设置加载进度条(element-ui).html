@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>第一个three.js文件_WebGL三维场景</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden; //隐藏body窗口区域滚动条
+    }
+  </style>
+  <!--引入three.js三维引擎-->
+  <script src="http://www.yanhuangxueyuan.com/threejs/build/three.js"></script>
+  <!-- 引入threejs扩展控件OrbitControls.js 可以对象场景进行旋转缩放平移操作-->
+  <script src="http://www.yanhuangxueyuan.com/threejs/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- 引入前端框架vue.js -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+  <!-- vuejs的库element-ui -->
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <!-- element-ui样式 -->
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+
+<body>
+  <div id="app">
+    <!-- 加载本地模型或者网速比较快，进度条可能一闪而过不明显，网速慢或者模型非常大的时候比较明显-->
+    <!-- 加载完成后，如果想隐藏进度条可以设置  v-if="loadedData!==100"，也就是loadedData等于100隐藏进度条-->
+    <!-- <div style="position: absolute;width:400px;" :style="{left: left+'px',top: top+'px'}" v-if="loadedData!==100"> -->
+    <div style="position: absolute;width:400px;" :style="{left: left+'px',top: top+'px'}">
+      <!-- 为了方便使用了element-ui库的进度条组件，进度条组件也可以前端自定义 -->
+      <el-progress :text-inside="true" :stroke-width="30" :percentage="loadedData"></el-progress>
+    </div>
+  </div>
+  <script>
+    /**
+     * 创建场景对象
+     */
+    var scene = new THREE.Scene();
+
+    var loader = new THREE.ObjectLoader(); //模型加载器
+
+    // 加载模型文件，load方法是第一函数是加载完成后执行，第二个函数是加载
+    // load方法参数2是加载成功后的回调函数
+    // load方法参数3是加载过程回调函数
+    loader.load("model.json",onLoad, onProgress);
+
+    // 加载完成的回调函数
+    function onLoad(Object3D) {
+      Object3D.scale.set(3, 3, 3); //对象缩放操作
+      Object3D.geometry.center(); // 玉镯网格模型的几何体geometry居中
+      Object3D.position.set(0, 0, 0); //玉镯网格模型位置设置
+      // 玉镯对象添加到场景
+      scene.add(Object3D)
+    }
+
+    // 加载过程回调函数
+    function onProgress(xhr) {
+      // 后台打印加载进度
+      console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+      //把加载进度数据取整然后传递给Vue
+      vm.$data.loadedData = Math.floor(xhr.loaded / xhr.total * 100)
+    }
+
+    //实例化vue
+    var vm = new Vue({
+      el: "#app",
+      data: {
+        // loadedData关联加载进度条
+        loadedData: 0,
+        left: (window.innerWidth - 400) / 2,
+        top: (window.innerHeight - 30) / 2,
+      },
+    })
+
+    /**
+     * 相机设置
+     */
+    var width = window.innerWidth; //窗口宽度
+    var height = window.innerHeight; //窗口高度
+    var k = width / height; //窗口宽高比
+    var s = 100; //三维场景缩放系数
+    //创建相机对象
+    var camera = new THREE.OrthographicCamera(-s * k, s * k, s, -s, 1, 1000);
+    camera.position.set(200, 20, 200); //设置相机位置
+    camera.lookAt(scene.position); //设置相机方向(指向的场景对象)
+    /**
+     * 创建渲染器对象
+     */
+    var renderer = new THREE.WebGLRenderer({
+      antialias: true
+    });
+    renderer.setSize(width, height);
+    document.body.appendChild(renderer.domElement); //body元素中插入canvas对象
+    function render() {
+      renderer.render(scene, camera); //执行渲染操作
+      requestAnimationFrame(render);
+    }
+    render();
+    var controls = new THREE.OrbitControls(camera); //创建控件对象
+  </script>
+</body>
+
+</html>
